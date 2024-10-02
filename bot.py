@@ -1,8 +1,6 @@
 import discord
 from discord.ext import commands
 import os
-from flask import Flask
-from threading import Thread
 
 # Configure intents
 intents = discord.Intents.default()
@@ -44,7 +42,7 @@ Click the emoji corresponding to the territory every time you have claimed it:
 
 **Anyone who declares false conquests will be kicked from the gang!**
 
-To demonstrate conquests and when the bot is off use this: https://dyno.gg/form/95bdcbdd
+To demonstrate conquests and when the bot is off, use this: https://dyno.gg/form/95bdcbdd
 """
 
 # Class for the emoji buttons view
@@ -63,7 +61,6 @@ class EmojiButtonView(discord.ui.View):
         for item in self.children:
             item.disabled = True
         await self.message.edit(view=self)
-        # We no longer send a summary to the user here
 
     async def send_results(self, emoji_clicked):
         # Update the user reactions dictionary
@@ -106,7 +103,7 @@ class EmojiButtonView(discord.ui.View):
         # Respond to the interaction to avoid errors
         await interaction.response.defer()
 
-# Class for the number buttons view
+# Class for the RP selection buttons view
 class NumberButtonView(discord.ui.View):
     def __init__(self, results_channel):
         super().__init__(timeout=None)  # No timeout for this view
@@ -139,11 +136,11 @@ async def on_ready():
     if channel is None or results_channel is None:
         print("Error: Check the channel IDs.")
         return
-    # Send the message with the number buttons and the personalized message
+    # Send the message with the RP selection buttons and the personalized message
     await channel.send(message_content, view=NumberButtonView(results_channel))
-    print('Message with number buttons sent.')
+    print('Message with RP selection buttons sent.')
 
-# Command results
+# Command to display results
 @bot.command(name='results')
 async def results(ctx):
     # Create the results message
@@ -154,13 +151,9 @@ async def results(ctx):
         rp2_emojis = {}
         for rp_selection, emoji in selections:
             if rp_selection == 'RP1':
-                if emoji not in rp1_emojis:
-                    rp1_emojis[emoji] = 0
-                rp1_emojis[emoji] += 1
+                rp1_emojis[emoji] = rp1_emojis.get(emoji, 0) + 1
             elif rp_selection == 'RP2':
-                if emoji not in rp2_emojis:
-                    rp2_emojis[emoji] = 0
-                rp2_emojis[emoji] += 1
+                rp2_emojis[emoji] = rp2_emojis.get(emoji, 0) + 1
         if rp1_emojis:
             results_message += f"**RP1** selections:\n"
             for emoji, count in rp1_emojis.items():
@@ -176,28 +169,11 @@ async def results(ctx):
     # Send the results in the channel where the command was invoked
     await ctx.send(results_message)
 
-# Event on_message
+# Event to handle messages
 @bot.event
 async def on_message(message):
     # Handle messages and commands
     await bot.process_commands(message)
-
-# Add the web server to keep the bot alive
-app = Flask('')
-
-@app.route('/')
-def home():
-    return "The bot is active!"
-
-def run():
-    app.run(host='0.0.0.0', port=8080)
-
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
-
-# Call keep_alive to start the web server
-keep_alive()
 
 # Run the bot
 TOKEN = os.environ['TOKEN']  # Enter your bot's token in the environment variables
